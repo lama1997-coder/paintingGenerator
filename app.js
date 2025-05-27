@@ -20,7 +20,7 @@ const ServerAPI = {
         return new Promise(resolve => {
             setTimeout(() => {
                 resolve([...this._data.titles]);
-            }, 300);
+            }, 500);
         });
     },
 
@@ -28,7 +28,7 @@ const ServerAPI = {
         return new Promise(resolve => {
             setTimeout(() => {
                 resolve([...this._data.globalReferences]);
-            }, 300);
+            }, 500);
         });
     },
 
@@ -38,7 +38,7 @@ const ServerAPI = {
             setTimeout(() => {
                 this._data.titles = [...titles];
                 resolve({ success: true });
-            }, 300);
+            }, 500);
         });
     },
 
@@ -47,7 +47,7 @@ const ServerAPI = {
             setTimeout(() => {
                 this._data.globalReferences = [...references];
                 resolve({ success: true });
-            }, 300);
+            }, 500);
         });
     },
 
@@ -57,7 +57,7 @@ const ServerAPI = {
             setTimeout(() => {
                 const title = this._data.titles.find(t => t.id === id);
                 resolve(title || null);
-            }, 200);
+            }, 500);
         });
     },
 
@@ -71,7 +71,7 @@ const ServerAPI = {
             const generateConcepts = async () => {
                 for (let i = 0; i < quantity; i++) {
                     // Simulate concept generation for each thumbnail
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 700));
 
                     const concept = {
                         id: generateID(),
@@ -506,7 +506,7 @@ function setupEventListeners() {
             } else if (error.request) {
                 // The request was made but no response was received
                 console.error("No response received:", error.request);
-                // alert('No response from server. Please check if the backend is running.');
+                //alert('No response from server. Please check if the backend is running.',error.request);
             } else {
                 // Something happened in setting up the request that triggered an Error
                 console.error("Request setup error:", error.message);
@@ -849,13 +849,14 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
 
     // Set up callback for when thumbnails are ready
     thumbnailReady = (thumbnail) => {
+        console.log('----th----thumbnail')
         // Render the thumbnail as soon as it's ready
         renderThumbnail(thumbnail, thumbnail.index);
         completedThumbnails.push(thumbnail);
 
         // Update the AI2 status
-        ai2Status.textContent = `Creating images... ${completedThumbnails.length}/${quantity} complete`;
-        ai2Progress.style.width = `${(completedThumbnails.length / quantity) * 100}%`;
+        // ai2Status.textContent = `Creating images... ${completedThumbnails.length}/${quantity} complete`;
+        // ai2Progress.style.width = `${(completedThumbnails.length / quantity) * 100}%`;
     };
 
     try {
@@ -863,8 +864,8 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
         ai1Status.textContent = 'Generating painting ideas...';
         simulateProgress(ai1Progress, null, null, 'Painting concepts ready!', 3000, async () => {
             // After AI 1 completes, start AI 2 (image generation) - parallel
-            ai2Status.textContent = 'Creating images... 0/' + quantity + ' complete';
-            ai2Progress.style.width = '0%';
+            // ai2Status.textContent = 'Creating images... 0/' + quantity + ' complete';
+            // ai2Progress.style.width = '0%';
 
             // Get AI-generated thumbnails from server (now in parallel)
             const newThumbnails = await ServerAPI.generateThumbnails(titleObj, references, quantity, startIndex);
@@ -955,12 +956,17 @@ function generateFullPrompt(title, instructions, index) {
 
 // Render a single thumbnail
 function renderThumbnail(thumbnailData, index) {
-    console.log('Rendering thumbnail data:', thumbnailData);
+    // console.log('Rendering thumbnail data:', thumbnailData);
+    // const thumbContainer = document.getElementById(`thumb-${index}`);
+    // thumbContainer.innerHTML = '';
+    // thumbContainer.dataset.id = thumbnailData.id;
+
+    if (thumbnailData.status === 'failed') {
+         console.log('Rendering thumbnail data:', thumbnailData);
     const thumbContainer = document.getElementById(`thumb-${index}`);
     thumbContainer.innerHTML = '';
     thumbContainer.dataset.id = thumbnailData.id;
 
-    if (thumbnailData.status === 'failed') {
         // Show error state for failed thumbnails
         const errorDiv = document.createElement('div');
         errorDiv.className = 'thumbnail-error';
@@ -986,11 +992,35 @@ function renderThumbnail(thumbnailData, index) {
 
         errorDiv.appendChild(regenerateBtn);
         thumbContainer.appendChild(errorDiv);
-        return;
     }
+// Handle pending or processing state
+    // if (thumbnailData.status === 'pending' || thumbnailData.status === 'processing') {
+    //     const loadingDiv = document.createElement('div');
+    //     loadingDiv.className = 'thumbnail-loading';
 
+    //     const spinner = document.createElement('div');
+    //     spinner.className = 'loading-spinner'; // Add CSS for spinner animation
+
+    //     const loadingText = document.createElement('p');
+    //     loadingText.className = 'loading-message';
+    //     loadingText.textContent = thumbnailData.status === 'pending'
+    //         ? 'Pending...'
+    //         : 'Processing...';
+
+    //     loadingDiv.appendChild(spinner);
+    //     loadingDiv.appendChild(loadingText);
+    //     thumbContainer.appendChild(loadingDiv);
+    //     return;
+    // }
+    console.log('----------render the image ',thumbnailData)
     // Regular thumbnail rendering for successful thumbnails
-    const img = document.createElement('img');
+   if(typeof thumbnailData.image_url!==null && thumbnailData.image_url!==''){
+     console.log('Rendering thumbnail data:', thumbnailData);
+    const thumbContainer = document.getElementById(`thumb-${index}`);
+    thumbContainer.innerHTML = '';
+    thumbContainer.dataset.id = thumbnailData.id;
+
+     const img = document.createElement('img');
     img.src = thumbnailData.image_url;
     img.alt = thumbnailData.summary;
     img.className = 'thumbnail-image';
@@ -1026,6 +1056,9 @@ function renderThumbnail(thumbnailData, index) {
     thumbContainer.addEventListener('click', () => {
         showPromptDetails(thumbnailData);
     });
+            return true;
+
+   }
 }
 
 // Show prompt details in modal
@@ -1414,8 +1447,8 @@ async function pollThumbnailStatus(titleId, expectedQuantity, attempt = 0) {
         // Base progress on completed thumbnails relative to the total number fetched so far for this title
         // or use expectedQuantity if it's more reliable for the current batch
         const progressPercentage = totalRelevant > 0 ? (completedCount / totalRelevant) * 100 : 0;
-        ai2Status.textContent = `Generating images... ${completedCount}/${totalRelevant} complete`;
-        ai2Progress.style.width = `${progressPercentage}%`;
+        // ai2Status.textContent = `Generating images... ${completedCount}/${totalRelevant} complete`;
+        // ai2Progress.style.width = `${progressPercentage}%`;
 
         // Check if all *relevant* thumbnails for this title are completed or failed
         // This check might need refinement if multiple batches can run concurrently

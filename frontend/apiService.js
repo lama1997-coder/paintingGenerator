@@ -19,7 +19,7 @@ const initAPI = async () => {
       headers: {
         'Content-Type': 'application/json'
       },
-      timeout: 30000 // Add timeout to avoid long waits on network issues
+      timeout: 1000000 // Add timeout to avoid long waits on network issues
     });
 
     // Add auth token to requests if available
@@ -45,7 +45,7 @@ const initAPI = async () => {
       headers: {
         'Content-Type': 'application/json'
       },
-      timeout: 30000
+      timeout: 1000000
     });
 
     // Add auth token to requests if available
