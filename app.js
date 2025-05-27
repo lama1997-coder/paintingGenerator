@@ -105,7 +105,7 @@ const ServerAPI = {
                     const processingTime = 1000 + Math.random() * 2000;
                     await new Promise(resolve => setTimeout(resolve, processingTime));
 
-                    console.log("the refrences ",references)
+                    console.log("the refrences ", references)
                     const thumbnailData = {
                         id: concept.id,
                         image_url: `https://placehold.co/600x400/3498db/ffffff?text=Thumbnail+${concept.index + 1}`,
@@ -467,13 +467,13 @@ function setupEventListeners() {
                 await Promise.all(
                     newRefs.map(ref => uploadReference(currentTitle.id, ref.data, false))
                 );
-               
+
 
             }
             //  const referencesResponse = await getReferences(currentTitle.id);
             // currentTitle.references = referencesResponse.data.references;
             // console.log('the quantity',currentTitle)
-             generateServerThumbnails(currentTitle,currentTitle.references, quantity, false);
+            generateServerThumbnails(currentTitle, currentTitle.references, quantity, false);
 
             // Generate thumbnails
             console.log("Generating thumbnails for title ID:", currentTitle.id, "Quantity:", quantity);
@@ -519,16 +519,21 @@ function setupEventListeners() {
     moreThumbnailsBtn.addEventListener('click', async () => {
         if (!currentTitle) return;
 
-        showLoading(true);
+        // showLoading(true);   
+        const count = document.querySelectorAll('#thumbnails-grid .thumbnail-item').length;
+        console.log('Total thumbnails:', count);
+
 
         try {
+            console.log("the surrent qu",)
             const quantity = parseInt(quantitySelect.value) || 3;
+            generateServerThumbnails(currentTitle, currentTitle.references, quantity, true);
 
             // Generate more thumbnails
             await generatePaintings(currentTitle.id, quantity);
-
+            pollThumbnailStatus(currentTitle.id, quantity);
             // Get the updated thumbnails
-            await loadThumbnails(currentTitle.id);
+            // await loadThumbnails(currentTitle.id);
         } catch (error) {
             console.error('Error generating more thumbnails:', error);
             alert('Failed to generate additional thumbnails. Please try again.');
@@ -852,7 +857,7 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
     thumbnailReady = (thumbnail) => {
         console.log('----th----thumbnail')
         // Render the thumbnail as soon as it's ready
-        
+
         renderThumbnail(thumbnail, thumbnail.index);
         completedThumbnails.push(thumbnail);
 
@@ -869,12 +874,13 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
             // ai2Status.textContent = 'Creating images... 0/' + quantity + ' complete';
             // ai2Progress.style.width = '0%';
 
+            progressSection.style.display = 'none';
+            moreThumbnailsSection.style.display = 'block';
+
             // Get AI-generated thumbnails from server (now in parallel)
             const newThumbnails = await ServerAPI.generateThumbnails(titleObj, references, quantity, startIndex);
 
             // After all thumbnails are generated
-            progressSection.style.display = 'none';
-            moreThumbnailsSection.style.display = 'block';
 
             // Save the generated thumbnails
             if (isAdditional) {
@@ -977,10 +983,10 @@ function renderThumbnail(thumbnailData, index) {
     }
 
     if (thumbnailData.status === 'failed') {
-         console.log('Rendering thumbnail data:', thumbnailData);
-    const thumbContainer = document.getElementById(`thumb-${index}`);
-    thumbContainer.innerHTML = '';
-    thumbContainer.dataset.id = thumbnailData.id;
+        console.log('Rendering thumbnail data:', thumbnailData);
+        const thumbContainer = document.getElementById(`thumb-${index}`);
+        thumbContainer.innerHTML = '';
+        thumbContainer.dataset.id = thumbnailData.id;
 
         // Show error state for failed thumbnails
         const errorDiv = document.createElement('div');
@@ -1008,7 +1014,7 @@ function renderThumbnail(thumbnailData, index) {
         errorDiv.appendChild(regenerateBtn);
         thumbContainer.appendChild(errorDiv);
     }
-// Handle pending or processing state
+    // Handle pending or processing state
     // if (thumbnailData.status === 'pending' || thumbnailData.status === 'processing') {
     //     const loadingDiv = document.createElement('div');
     //     loadingDiv.className = 'thumbnail-loading';
@@ -1027,53 +1033,53 @@ function renderThumbnail(thumbnailData, index) {
     //     thumbContainer.appendChild(loadingDiv);
     //     return;
     // }
-    console.log('----------render the image ',thumbnailData)
+    console.log('----------render the image ', thumbnailData)
     // Regular thumbnail rendering for successful thumbnails
-   if(typeof thumbnailData.image_url!==null && thumbnailData.image_url!==''){
-     console.log('Rendering thumbnail data:', thumbnailData);
-    const thumbContainer = document.getElementById(`thumb-${index}`);
-    thumbContainer.innerHTML = '';
-    thumbContainer.dataset.id = thumbnailData.id;
+    if (typeof thumbnailData.image_url !== null && thumbnailData.image_url !== '') {
+        console.log('Rendering thumbnail data:', thumbnailData);
+        const thumbContainer = document.getElementById(`thumb-${index}`);
+        thumbContainer.innerHTML = '';
+        thumbContainer.dataset.id = thumbnailData.id;
 
-     const img = document.createElement('img');
-    img.src = thumbnailData.image_url;
-    img.alt = thumbnailData.summary;
-    img.className = 'thumbnail-image';
+        const img = document.createElement('img');
+        img.src = thumbnailData.image_url;
+        img.alt = thumbnailData.summary;
+        img.className = 'thumbnail-image';
 
-    const actions = document.createElement('div');
-    actions.className = 'thumbnail-actions';
+        const actions = document.createElement('div');
+        actions.className = 'thumbnail-actions';
 
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'action-btn';
-    downloadBtn.textContent = 'Download';
-    downloadBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent opening modal when clicking download
-        // In a real app, this would download the image
-        alert(`Downloading: ${thumbnailData.summary}`);
-    });
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'action-btn';
+        downloadBtn.textContent = 'Download';
+        downloadBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent opening modal when clicking download
+            // In a real app, this would download the image
+            alert(`Downloading: ${thumbnailData.summary}`);
+        });
 
-    const regenerateBtn = document.createElement('button');
-    regenerateBtn.className = 'action-btn';
-    regenerateBtn.textContent = 'Regenerate';
-    regenerateBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent opening modal when clicking regenerate
-        // In a real app, this would regenerate this specific thumbnail
-        regenerateSingleThumbnail(index, thumbnailData.id);
-    });
+        const regenerateBtn = document.createElement('button');
+        regenerateBtn.className = 'action-btn';
+        regenerateBtn.textContent = 'Regenerate';
+        regenerateBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent opening modal when clicking regenerate
+            // In a real app, this would regenerate this specific thumbnail
+            regenerateSingleThumbnail(index, thumbnailData.id);
+        });
 
-    actions.appendChild(downloadBtn);
-    actions.appendChild(regenerateBtn);
+        actions.appendChild(downloadBtn);
+        actions.appendChild(regenerateBtn);
 
-    thumbContainer.appendChild(img);
-    thumbContainer.appendChild(actions);
+        thumbContainer.appendChild(img);
+        thumbContainer.appendChild(actions);
 
-    // Add click event to view prompt details
-    thumbContainer.addEventListener('click', () => {
-        showPromptDetails(thumbnailData);
-    });
-            return true;
+        // Add click event to view prompt details
+        thumbContainer.addEventListener('click', () => {
+            showPromptDetails(thumbnailData);
+        });
+        return true;
 
-   }
+    }
 }
 
 // Show prompt details in modal
