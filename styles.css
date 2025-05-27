@@ -340,6 +340,9 @@ input:checked + .slider:before {
     background-color: #ecf0f1;
     position: relative;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .loading-thumbnail::after {

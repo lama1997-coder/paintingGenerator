@@ -839,6 +839,7 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
 
         const loadingThumb = document.createElement('div');
         loadingThumb.className = 'loading-thumbnail';
+        //  loadingThumb.innerHTML ='processing'
 
         thumbContainer.appendChild(loadingThumb);
         thumbnailsGrid.appendChild(thumbContainer);
@@ -851,6 +852,7 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
     thumbnailReady = (thumbnail) => {
         console.log('----th----thumbnail')
         // Render the thumbnail as soon as it's ready
+        
         renderThumbnail(thumbnail, thumbnail.index);
         completedThumbnails.push(thumbnail);
 
@@ -958,8 +960,21 @@ function generateFullPrompt(title, instructions, index) {
 function renderThumbnail(thumbnailData, index) {
     // console.log('Rendering thumbnail data:', thumbnailData);
     // const thumbContainer = document.getElementById(`thumb-${index}`);
-    // thumbContainer.innerHTML = '';
+    // thumbContainer.innerHTML = thumbnailData.status;
     // thumbContainer.dataset.id = thumbnailData.id;
+    const thumbContainer = document.getElementById(`thumb-${index}`);
+    if (!thumbContainer) return;
+
+    thumbContainer.dataset.id = thumbnailData.id;
+
+    // Update loading message before clearing
+    const loadingDiv = thumbContainer.querySelector('.loading-thumbnail');
+    if (loadingDiv && (thumbnailData.status === 'processing' || thumbnailData.status === 'pending')) {
+        loadingDiv.textContent = thumbnailData.status === 'pending'
+            ? 'Pending...'
+            : 'Processing...';
+        return; // don't render full thumbnail yet
+    }
 
     if (thumbnailData.status === 'failed') {
          console.log('Rendering thumbnail data:', thumbnailData);
