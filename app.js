@@ -531,7 +531,7 @@ function setupEventListeners() {
 
             // Generate more thumbnails
             await generatePaintings(currentTitle.id, quantity);
-            pollThumbnailStatus(currentTitle.id, quantity);
+            pollThumbnailStatus(currentTitle.id, quantity,count);
             // Get the updated thumbnails
             // await loadThumbnails(currentTitle.id);
         } catch (error) {
@@ -834,8 +834,9 @@ async function generateServerThumbnails(titleObj, references, quantity, isAdditi
     }
 
     // Get the starting index for new thumbnails
-    const startIndex = isAdditional ? titleObj.thumbnails.length : 0;
+    const startIndex = isAdditional ? document.querySelectorAll('#thumbnails-grid .thumbnail-item').length : 0;
 
+    console.log('the starting Index ',startIndex )
     // Setup loading thumbnails
     for (let i = 0; i < quantity; i++) {
         const thumbContainer = document.createElement('div');
